@@ -297,12 +297,13 @@ class OperationsSQL:
             return None
     
     @staticmethod
-    def filter(tabela: str, condicao: str, campo_ordenar: Optional[str] = None, ordenacao: Optional[str] = None, limite_por_pagina: int = 5, pagina: int = 1, inner_join_receive: Optional[str] = None, select_receive: Optional[str] = None) -> List[Dict[str, Any]]:
+    def filter(tabela: str, condicao: Optional[str] = None, campo_ordenar: Optional[str] = None, ordenacao: Optional[str] = None, limite_por_pagina: int = 5, pagina: int = 1, inner_join_receive: Optional[str] = None, select_receive: Optional[str] = None) -> List[Dict[str, Any]]:
         offset = (pagina - 1) * limite_por_pagina
         
         select = '*'
         inner_join = ""
         order_clause = ""
+        where_clause = f"WHERE {condicao}" if condicao else ""
         if campo_ordenar and ordenacao:
             order_clause = f"ORDER BY {campo_ordenar} {ordenacao}"
         if inner_join_receive:
@@ -313,7 +314,7 @@ class OperationsSQL:
         query = f"""
             SELECT {select} FROM {tabela}
             {inner_join}
-            WHERE {condicao}
+            {where_clause}
             {order_clause}
             LIMIT {limite_por_pagina} OFFSET {offset}
         """
@@ -332,18 +333,17 @@ class OperationsSQL:
             return []
         
     @staticmethod
-    def count(tabela: str, condicao: str, field_count: str, inner_join_receive: Optional[str] = None) -> List[Dict[str, Any]]:
-
-        
-        select = 'COUNT('+field_count+') AS total'
+    def count(tabela: str, field_count: str, condicao: Optional[str] = None, inner_join_receive: Optional[str] = None) -> List[Dict[str, Any]]:
+        select = 'COUNT(' + field_count + ') AS total'
         inner_join = ""
+        where_clause = f"WHERE {condicao}" if condicao else ""
         if inner_join_receive:
             inner_join = inner_join_receive
         
         query = f"""
             SELECT {select} FROM {tabela}
             {inner_join}
-            WHERE {condicao}
+            {where_clause}
         """
         try:
             with connection.cursor() as cursor:
@@ -355,5 +355,5 @@ class OperationsSQL:
                 ]
             return results
         except Exception as e:
-            logging.error(f"Erro ao executar a consulta 'Count': {e}")
+            logging.error(f"Erro ao executar a consulta 'count': {e}")
             return []
